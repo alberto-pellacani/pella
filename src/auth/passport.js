@@ -18,6 +18,7 @@ function createPassport(userService, config) {
       clientID: config.googleClientId,
       clientSecret: config.googleClientSecret,
       callbackURL: `${config.baseUrl}/auth/google/callback`,
+      state: true, // protegge il flusso OAuth dal "login CSRF"
     }, (accessToken, refreshToken, profile, done) => {
       userService.loginWithGoogle({
         googleId: profile.id,

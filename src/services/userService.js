@@ -54,7 +54,9 @@ function createUserService(repo) {
     const byEmail = await repo.findByEmail(normEmail);
     if (byEmail) {
       if (!byEmail.active) throw new UserError('INACTIVE');
-      return publicUser(await repo.update(byEmail.id, { googleId }));
+      // La password di questo account non è mai stata verificata (chiunque poteva registrare
+      // questa email): collegando Google la rimuoviamo, così resta solo il proprietario reale.
+      return publicUser(await repo.update(byEmail.id, { googleId, passwordHash: null }));
     }
 
     const name = String(displayName || '').trim() || normEmail.split('@')[0];

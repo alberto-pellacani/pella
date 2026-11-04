@@ -159,7 +159,8 @@ test('con Google non configurato il pulsante Google non compare; configurato sì
   const { app } = setup({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret', BASE_URL: 'http://localhost:3000' });
   const on = await request(app).get('/login').expect(200);
   assert.match(on.text, /\/auth\/google/);
-  await request(app).get('/auth/google').expect(302).expect('Location', /accounts\.google\.com/);
+  // Il parametro state protegge il flusso OAuth dal "login CSRF"
+  await request(app).get('/auth/google').expect(302).expect('Location', /accounts\.google\.com.*[?&]state=/);
 });
 
 test('loadConfig: in produzione senza SESSION_SECRET lancia errore', () => {

@@ -166,3 +166,12 @@ test('getActiveUser: utente disattivato → null; listUsers ordina per data', as
   assert.equal(await svc.getActiveUser(999), null);
   assert.deepEqual((await svc.listUsers()).map((u) => u.id), [a.id, b.id]);
 });
+
+test('loginWithGoogle: collegando un account con password non verificata, la password viene rimossa', async () => {
+  const { repo, svc } = setup();
+  const local = await svc.registerLocal({ email: 'g@x.it', password: 'password1' });
+  const u = await svc.loginWithGoogle(g());
+  assert.equal(u.hasPassword, false);
+  assert.equal((await repo.findById(local.id)).passwordHash, null);
+  await rejectsCode(svc.authenticateLocal('g@x.it', 'password1'), 'INVALID_CREDENTIALS');
+});
