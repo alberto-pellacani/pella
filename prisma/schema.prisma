@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// L'URL di connessione è in prisma.config.js (CLI) e in src/db/prisma.js (app)
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  admin
+  user
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String?
+  googleId     String?  @unique
+  displayName  String
+  role         Role     @default(user)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+// Tabella usata da connect-pg-simple per salvare le sessioni di login
+model Session {
+  sid    String   @id @db.VarChar
+  sess   Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire])
+  @@map("session")
+}
