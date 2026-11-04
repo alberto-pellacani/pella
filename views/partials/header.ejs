@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= locals.title ? title + ' · ' : '' %>Pella App</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Pella App</a>
+    <nav>
+      <% if (locals.currentUser) { %>
+        <a href="/profile">Profilo</a>
+        <% if (currentUser.role === 'admin') { %><a href="/admin">Utenti</a><% } %>
+        <form method="post" action="/logout" class="inline">
+          <input type="hidden" name="_csrf" value="<%= locals.csrfToken %>">
+          <button type="submit" class="link">Esci</button>
+        </form>
+      <% } else { %>
+        <a href="/login">Accedi</a>
+        <a href="/register">Registrati</a>
+      <% } %>
+    </nav>
+  </header>
+  <main>
+    <% if (locals.flash) { %>
+      <div class="flash <%= flash.type %>"><%= flash.text %></div>
+    <% } %>

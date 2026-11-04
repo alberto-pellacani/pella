@@ -1,0 +1,13 @@
+<%- include('partials/header') %>
+<section class="card narrow">
+  <h1>Accedi</h1>
+  <form method="post" action="/login">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label>Email <input type="email" name="email" required autocomplete="email"></label>
+    <label>Password <input type="password" name="password" required autocomplete="current-password"></label>
+    <button type="submit" class="button">Accedi</button>
+  </form>
+  <%- include('partials/google') %>
+  <p class="muted">Non hai un account? <a href="/register">Registrati</a></p>
+</section>
+<%- include('partials/footer') %>

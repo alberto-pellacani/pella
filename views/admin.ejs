@@ -1,0 +1,35 @@
+<%- include('partials/header') %>
+<section class="card">
+  <h1>Gestione utenti</h1>
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Nome</th><th>Email</th><th>Accesso</th><th>Ruolo</th><th>Stato</th><th>Azioni</th></tr>
+    </thead>
+    <tbody>
+      <% users.forEach((u) => { %>
+        <tr class="<%= u.active ? '' : 'inactive' %>">
+          <td><%= u.displayName %><% if (u.id === currentUser.id) { %> <small class="muted">(tu)</small><% } %></td>
+          <td><%= u.email %></td>
+          <td><%= [u.hasPassword && 'password', u.googleId && 'Google'].filter(Boolean).join(' + ') %></td>
+          <td><span class="badge <%= u.role %>"><%= u.role %></span></td>
+          <td><%= u.active ? 'attivo' : 'disattivato' %></td>
+          <td class="actions">
+            <form method="post" action="/admin/users/<%= u.id %>/role" class="inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="role" value="<%= u.role === 'admin' ? 'user' : 'admin' %>">
+              <button type="submit" class="button small secondary"><%= u.role === 'admin' ? 'Rendi user' : 'Rendi admin' %></button>
+            </form>
+            <form method="post" action="/admin/users/<%= u.id %>/active" class="inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="active" value="<%= u.active ? 'false' : 'true' %>">
+              <button type="submit" class="button small <%= u.active ? 'danger' : 'secondary' %>"><%= u.active ? 'Disattiva' : 'Riattiva' %></button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  </div>
+</section>
+<%- include('partials/footer') %>

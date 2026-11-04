@@ -1,0 +1,17 @@
+<%- include('partials/header') %>
+<section class="card narrow">
+  <h1>Il mio profilo</h1>
+  <dl>
+    <dt>Email</dt><dd><%= currentUser.email %></dd>
+    <dt>Ruolo</dt><dd><span class="badge <%= currentUser.role %>"><%= currentUser.role %></span></dd>
+    <dt>Accesso con</dt>
+    <dd><%= [currentUser.hasPassword && 'password', currentUser.googleId && 'Google'].filter(Boolean).join(' + ') %></dd>
+  </dl>
+  <form method="post" action="/profile">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label>Nome visualizzato
+      <input type="text" name="displayName" value="<%= currentUser.displayName %>" required maxlength="100"></label>
+    <button type="submit" class="button">Salva</button>
+  </form>
+</section>
+<%- include('partials/footer') %>
