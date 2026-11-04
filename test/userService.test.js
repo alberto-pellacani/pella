@@ -78,3 +78,91 @@ test('authenticateLocal: utente disattivato → INACTIVE', async () => {
   await repo.update(u.id, { active: false });
   await rejectsCode(svc.authenticateLocal('a@x.it', 'password1'), 'INACTIVE');
 });
+
+// ---- Task 2: Google, profilo, regole admin ----
+const g = (over = {}) => ({ googleId: 'g1', email: 'g@x.it', emailVerified: true, displayName: 'Gianni', ...over });
+
+test('loginWithGoogle: googleId già noto → stesso utente', async () => {
+  const { svc } = setup();
+  const a = await svc.loginWithGoogle(g());
+  const b = await svc.loginWithGoogle(g({ email: 'cambiata@x.it' }));
+  assert.equal(a.id, b.id);
+});
+
+test('loginWithGoogle: email nuova e verificata → crea utente (admin se primo)', async () => {
+  const { svc } = setup();
+  const a = await svc.loginWithGoogle(g({ email: 'G@X.it' }));
+  assert.equal(a.email, 'g@x.it');
+  assert.equal(a.role, 'admin');
+  assert.equal(a.displayName, 'Gianni');
+  const b = await svc.loginWithGoogle(g({ googleId: 'g2', email: 'h@x.it' }));
+  assert.equal(b.role, 'user');
+});
+
+test('loginWithGoogle: email esistente e verificata → collega googleId', async () => {
+  const { repo, svc } = setup();
+  const local = await svc.registerLocal({ email: 'g@x.it', password: 'password1' });
+  const u = await svc.loginWithGoogle(g());
+  assert.equal(u.id, local.id);
+  assert.equal((await repo.findById(local.id)).googleId, 'g1');
+  assert.equal(await repo.count(), 1);
+});
+
+test('loginWithGoogle: email non verificata o mancante → GOOGLE_EMAIL_UNVERIFIED', async () => {
+  const { svc } = setup();
+  await rejectsCode(svc.loginWithGoogle(g({ emailVerified: false })), 'GOOGLE_EMAIL_UNVERIFIED');
+  await rejectsCode(svc.loginWithGoogle(g({ email: undefined })), 'GOOGLE_EMAIL_UNVERIFIED');
+});
+
+test('loginWithGoogle: utente disattivato → INACTIVE', async () => {
+  const { repo, svc } = setup();
+  const u = await svc.loginWithGoogle(g());
+  await repo.update(u.id, { active: false });
+  await rejectsCode(svc.loginWithGoogle(g()), 'INACTIVE');
+});
+
+test('updateProfile: displayName vuoto → INVALID_INPUT; valido → aggiornato', async () => {
+  const { svc } = setup();
+  const u = await svc.registerLocal({ email: 'a@x.it', password: 'password1' });
+  await rejectsCode(svc.updateProfile(u.id, { displayName: '   ' }), 'INVALID_INPUT');
+  const v = await svc.updateProfile(u.id, { displayName: '  Anna  ' });
+  assert.equal(v.displayName, 'Anna');
+});
+
+test("setRole: declassare l'unico admin attivo → LAST_ADMIN; con 2 admin → ok", async () => {
+  const { svc } = setup();
+  const a = await svc.registerLocal({ email: 'a@x.it', password: 'password1' });
+  const b = await svc.registerLocal({ email: 'b@x.it', password: 'password1' });
+  await rejectsCode(svc.setRole(a.id, 'user'), 'LAST_ADMIN');
+  await svc.setRole(b.id, 'admin');
+  const a2 = await svc.setRole(a.id, 'user');
+  assert.equal(a2.role, 'user');
+});
+
+test("setActive: disattivare l'unico admin attivo → LAST_ADMIN; un user → ok", async () => {
+  const { svc } = setup();
+  const a = await svc.registerLocal({ email: 'a@x.it', password: 'password1' });
+  const b = await svc.registerLocal({ email: 'b@x.it', password: 'password1' });
+  await rejectsCode(svc.setActive(a.id, false), 'LAST_ADMIN');
+  const b2 = await svc.setActive(b.id, false);
+  assert.equal(b2.active, false);
+});
+
+test('setRole: ruolo non valido → INVALID_INPUT; id inesistente → NOT_FOUND', async () => {
+  const { svc } = setup();
+  const a = await svc.registerLocal({ email: 'a@x.it', password: 'password1' });
+  await rejectsCode(svc.setRole(a.id, 'superuser'), 'INVALID_INPUT');
+  await rejectsCode(svc.setRole(999, 'user'), 'NOT_FOUND');
+  await rejectsCode(svc.setActive(999, false), 'NOT_FOUND');
+});
+
+test('getActiveUser: utente disattivato → null; listUsers ordina per data', async () => {
+  const { svc } = setup();
+  const a = await svc.registerLocal({ email: 'a@x.it', password: 'password1' });
+  const b = await svc.registerLocal({ email: 'b@x.it', password: 'password1' });
+  assert.equal((await svc.getActiveUser(b.id)).email, 'b@x.it');
+  await svc.setActive(b.id, false);
+  assert.equal(await svc.getActiveUser(b.id), null);
+  assert.equal(await svc.getActiveUser(999), null);
+  assert.deepEqual((await svc.listUsers()).map((u) => u.id), [a.id, b.id]);
+});

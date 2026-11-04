@@ -41,7 +41,63 @@ function createUserService(repo) {
     return publicUser(user);
   }
 
-  return { registerLocal, authenticateLocal };
+  async function loginWithGoogle({ googleId, email, emailVerified, displayName }) {
+    const byGoogle = await repo.findByGoogleId(googleId);
+    if (byGoogle) {
+      if (!byGoogle.active) throw new UserError('INACTIVE');
+      return publicUser(byGoogle);
+    }
+
+    const normEmail = normalizeEmail(email);
+    if (!normEmail || emailVerified !== true) throw new UserError('GOOGLE_EMAIL_UNVERIFIED');
+
+    const byEmail = await repo.findByEmail(normEmail);
+    if (byEmail) {
+      if (!byEmail.active) throw new UserError('INACTIVE');
+      return publicUser(await repo.update(byEmail.id, { googleId }));
+    }
+
+    const name = String(displayName || '').trim() || normEmail.split('@')[0];
+    return publicUser(await repo.create({ email: normEmail, googleId, displayName: name, role: await firstUserRole() }));
+  }
+
+  async function getActiveUser(id) {
+    const user = await repo.findById(id);
+    return user && user.active ? publicUser(user) : null;
+  }
+
+  async function updateProfile(id, { displayName }) {
+    const name = String(displayName || '').trim();
+    if (!name || name.length > 100) throw new UserError('INVALID_INPUT', 'Il nome deve avere tra 1 e 100 caratteri.');
+    return publicUser(await repo.update(id, { displayName: name }));
+  }
+
+  async function listUsers() {
+    return (await repo.list()).map(publicUser);
+  }
+
+  // Rifiuta l'operazione se toglierebbe l'ultimo admin attivo
+  async function loadTargetGuardingLastAdmin(targetId, wouldRemoveAdmin) {
+    const target = await repo.findById(targetId);
+    if (!target) throw new UserError('NOT_FOUND');
+    if (wouldRemoveAdmin && target.role === 'admin' && target.active && (await repo.countActiveAdmins()) <= 1) {
+      throw new UserError('LAST_ADMIN');
+    }
+    return target;
+  }
+
+  async function setRole(targetId, role) {
+    if (role !== 'admin' && role !== 'user') throw new UserError('INVALID_INPUT', 'Ruolo non valido.');
+    await loadTargetGuardingLastAdmin(targetId, role === 'user');
+    return publicUser(await repo.update(targetId, { role }));
+  }
+
+  async function setActive(targetId, active) {
+    await loadTargetGuardingLastAdmin(targetId, active === false);
+    return publicUser(await repo.update(targetId, { active: Boolean(active) }));
+  }
+
+  return { registerLocal, authenticateLocal, loginWithGoogle, getActiveUser, updateProfile, listUsers, setRole, setActive };
 }
 
 module.exports = { createUserService, normalizeEmail };
