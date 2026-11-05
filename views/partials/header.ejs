@@ -9,10 +9,14 @@
 <% if (locals.currentUser) { %>
 <body class="app">
   <header class="topbar">
-    <a class="brand" href="/">PELLA</a>
+    <a class="brand" href="/">Pella</a>
     <span class="who"><%= currentUser.displayName %> · <%= currentUser.role %></span>
   </header>
   <aside class="sidebar">
+    <div class="sidebar-head">
+      <a class="brand" href="/">Pella</a>
+      <span class="who"><%= currentUser.displayName %> · <%= currentUser.role %></span>
+    </div>
     <%- include('nav', { variant: 'sidebar' }) %>
   </aside>
   <div id="menu" class="menu-full" role="dialog" aria-label="Menu">
@@ -26,7 +30,7 @@
 <% } else { %>
 <body class="guest">
   <main class="auth">
-    <div class="auth-brand">PELLA</div>
+    <div class="auth-brand">Pella</div>
 <% } %>
     <% if (locals.flash) { %>
       <div class="flash <%= flash.type %>" role="status">
