@@ -1,0 +1,11 @@
+<%- include('partials/header') %>
+<h1>Benvenuto, <%= currentUser.displayName %></h1>
+<p class="muted">Scegli da dove iniziare.</p>
+<div class="tiles">
+  <a class="tile" href="/profile"><%- include('partials/icon', { name: 'user' }) %><span><b>Profilo</b><small>Il tuo nome e i dati di accesso</small></span></a>
+  <% if (currentUser.role === 'admin') { %>
+    <a class="tile" href="/admin"><%- include('partials/icon', { name: 'users' }) %><span><b>Utenti</b><small>Ruoli e accessi</small></span></a>
+    <a class="tile" href="/admin/ai"><%- include('partials/icon', { name: 'bot' }) %><span><b>Provider AI</b><small>Chiavi API e modelli LLM</small></span></a>
+  <% } %>
+</div>
+<%- include('partials/footer') %>

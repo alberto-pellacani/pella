@@ -37,6 +37,7 @@ function createApp({ userService, sessionStore, config }) {
   // Variabili disponibili in tutte le pagine
   app.use((req, res, next) => {
     res.locals.currentUser = req.user || null;
+    res.locals.currentPath = req.path;
     res.locals.csrfToken = generateToken(req);
     res.locals.flash = req.session.flash || null;
     delete req.session.flash;

@@ -1,0 +1,25 @@
+<%
+// Voci di menu condivise tra barra laterale (PC) e menu a schermo intero (mobile)
+const path = locals.currentPath || '';
+const isActive = (href) => {
+  if (href === '/') return path === '/';
+  if (href === '/admin') return path === '/admin' || path.startsWith('/admin/users');
+  return path === href || path.startsWith(href + '/');
+};
+const item = (href, label, icon) =>
+  `<a class="nav-item${isActive(href) ? ' active' : ''}" href="${href}">` +
+  include('icon', { name: icon }) + `<span>${label}</span></a>`;
+%>
+<nav class="nav nav-<%= variant %>" aria-label="Menu principale">
+  <%- item('/', 'Home', 'home') %>
+  <%- item('/profile', 'Profilo', 'user') %>
+  <% if (currentUser.role === 'admin') { %>
+    <div class="nav-group">Amministrazione</div>
+    <%- item('/admin', 'Utenti', 'users') %>
+    <%- item('/admin/ai', 'Provider AI', 'bot') %>
+  <% } %>
+  <form method="post" action="/logout" class="nav-logout">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="submit" class="nav-item"><%- include('icon', { name: 'logout' }) %><span>Esci</span></button>
+  </form>
+</nav>

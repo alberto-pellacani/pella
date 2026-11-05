@@ -13,11 +13,11 @@ function authRoutes({ passport, userService, config }) {
         flash(req, 'error', (info && info.message) || 'Accesso non riuscito.');
         return res.redirect(failurePath);
       }
-      return req.login(user, (e) => (e ? next(e) : res.redirect('/profile')));
+      return req.login(user, (e) => (e ? next(e) : res.redirect('/')));
     })(req, res, next);
   };
 
-  router.get('/', (req, res) => res.redirect(req.user ? '/profile' : '/login'));
+  router.get('/', (req, res) => (req.user ? res.render('home', { title: 'Home' }) : res.redirect('/login')));
 
   router.get('/login', (req, res) => res.render('login', { title: 'Accedi', googleEnabled: config.googleEnabled }));
   router.post('/login', authenticate('local', '/login'));
@@ -26,7 +26,7 @@ function authRoutes({ passport, userService, config }) {
   router.post('/register', async (req, res, next) => {
     try {
       const user = await userService.registerLocal(req.body);
-      req.login(user, (e) => (e ? next(e) : res.redirect('/profile')));
+      req.login(user, (e) => (e ? next(e) : res.redirect('/')));
     } catch (err) {
       if (!(err instanceof UserError)) return next(err);
       flash(req, 'error', err.message);

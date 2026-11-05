@@ -40,12 +40,12 @@ test('GET /profile da anonimo → redirect /login', async () => {
   await request(app).get('/profile').expect(302).expect('Location', '/login');
 });
 
-test("registrazione → redirect /profile e la pagina mostra l'email", async () => {
+test("registrazione → redirect / e il profilo mostra l'email", async () => {
   const { app } = setup();
   const agent = request.agent(app);
   await register(agent, 'anna@x.it').then((r) => {
     assert.equal(r.status, 302);
-    assert.equal(r.headers.location, '/profile');
+    assert.equal(r.headers.location, '/');
   });
   const res = await agent.get('/profile').expect(200);
   assert.match(res.text, /anna@x\.it/);
@@ -79,14 +79,14 @@ test('login con password errata → resta su /login con messaggio', async () => 
   assert.match(res.text, /Credenziali non valide/);
 });
 
-test('login corretto dopo logout → /profile', async () => {
+test('login corretto dopo logout → /', async () => {
   const { app } = setup();
   const agent = request.agent(app);
   await register(agent, 'anna@x.it');
   const t = await getCsrf(agent, '/profile');
   await agent.post('/logout').type('form').send({ _csrf: t });
   const r = await login(agent, 'ANNA@x.it');
-  assert.equal(r.headers.location, '/profile');
+  assert.equal(r.headers.location, '/');
 });
 
 test('user normale: GET /admin → 403', async () => {
@@ -165,4 +165,40 @@ test('con Google non configurato il pulsante Google non compare; configurato sì
 
 test('loadConfig: in produzione senza SESSION_SECRET lancia errore', () => {
   assert.throws(() => loadConfig({ NODE_ENV: 'production' }), /SESSION_SECRET/);
+});
+
+test('layout: GET / da collegato mostra la Home con barra laterale e menu mobile', async () => {
+  const { app } = setup();
+  const agent = request.agent(app);
+  await register(agent, 'anna@x.it');
+  const res = await agent.get('/').expect(200);
+  assert.match(res.text, /Benvenuto/);
+  assert.match(res.text, /class="sidebar"/);
+  assert.match(res.text, /href="#menu"/);
+  assert.match(res.text, /id="menu"/);
+});
+
+test('layout: la sezione Provider AI compare solo agli admin', async () => {
+  const { app } = setup();
+  const admin = request.agent(app);
+  await register(admin, 'admin@x.it');
+  const user = request.agent(app);
+  await register(user, 'user@x.it');
+  assert.match((await admin.get('/').expect(200)).text, /href="\/admin\/ai"/);
+  assert.doesNotMatch((await user.get('/').expect(200)).text, /href="\/admin\/ai"/);
+});
+
+test('layout: login senza barra laterale né barra mobile', async () => {
+  const { app } = setup();
+  const res = await request(app).get('/login').expect(200);
+  assert.doesNotMatch(res.text, /class="sidebar"/);
+  assert.doesNotMatch(res.text, /bottombar/);
+});
+
+test('layout: la voce Profilo è attiva sulla pagina profilo', async () => {
+  const { app } = setup();
+  const agent = request.agent(app);
+  await register(agent, 'anna@x.it');
+  const res = await agent.get('/profile').expect(200);
+  assert.match(res.text, /<a class="nav-item active" href="\/profile"/);
 });
