@@ -1,0 +1,26 @@
+<%- include('partials/header') %>
+<a class="back" href="/admin/ai/<%= provider.type %>">← <%= provider.label %></a>
+<div class="page-head"><h1>Modelli disponibili</h1></div>
+<section class="card">
+  <% if (models.length === 0) { %>
+    <p class="muted">Il provider non ha restituito modelli.</p>
+  <% } else { %>
+    <form method="post" action="/admin/ai/<%= provider.type %>/models">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>Cerca
+        <input type="search" data-filter placeholder="Filtra per nome o ID (<%= models.length %> modelli)"></label>
+      <ul class="checklist">
+        <% models.forEach((m) => { %>
+          <li data-filter-row data-filter-text="<%= m.id %> <%= m.name %>">
+            <label class="<%= m.added ? 'added' : '' %>">
+              <input type="checkbox" name="models" value="<%= m.id %>" <%= m.added ? 'checked disabled' : '' %>>
+              <span><%= m.name %><small><%= m.id %><%= m.added ? ' · già aggiunto' : '' %></small></span>
+            </label>
+          </li>
+        <% }) %>
+      </ul>
+      <p><button type="submit" class="button"><%- include('partials/icon', { name: 'plus' }) %>Aggiungi selezionati</button></p>
+    </form>
+  <% } %>
+</section>
+<%- include('partials/footer') %>

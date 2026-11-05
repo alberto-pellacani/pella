@@ -1,0 +1,24 @@
+<%- include('partials/header') %>
+<div class="page-head"><h1>Provider AI</h1></div>
+<% if (!encryptionReady) { %>
+  <div class="notice"><%- include('partials/icon', { name: 'alert' }) %>
+    <span>Salvataggio delle chiavi disattivato: imposta la variabile <code>AI_ENCRYPTION_KEY</code> nelle variabili d'ambiente e riavvia l'app.</span></div>
+<% } %>
+<p class="muted">Configura le chiavi API e scegli i modelli che l'applicazione potrà usare.</p>
+<div class="grid">
+  <% providers.forEach((p) => { %>
+    <a class="provider" href="/admin/ai/<%= p.type %>">
+      <%- include('partials/icon', { name: 'plug' }) %>
+      <span>
+        <b><%= p.label %></b>
+        <% if (!p.configured) { %>
+          <small><span class="badge">non configurato</span></small>
+        <% } else { %>
+          <small><span class="badge <%= p.active ? 'on' : '' %>"><%= p.active ? 'attivo' : 'disattivato' %></span>
+            &nbsp;<%= p.modelCount === 1 ? '1 modello' : p.modelCount + ' modelli' %></small>
+        <% } %>
+      </span>
+    </a>
+  <% }) %>
+</div>
+<%- include('partials/footer') %>

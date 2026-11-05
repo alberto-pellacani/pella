@@ -6,11 +6,14 @@ const { createApp } = require('../src/app');
 const { loadConfig } = require('../src/config');
 const { createUserService } = require('../src/services/userService');
 const { createFakeUserRepo } = require('./fakeUserRepo');
+const { createAiService } = require('../src/services/aiService');
+const { createFakeAiRepo } = require('./fakeAiRepo');
 
 function setup(envOver = {}) {
   const userService = createUserService(createFakeUserRepo());
   const config = loadConfig({ SESSION_SECRET: 'test-secret', NODE_ENV: 'test', ...envOver });
-  const app = createApp({ userService, sessionStore: new session.MemoryStore(), config });
+  const aiService = createAiService({ repo: createFakeAiRepo(), client: null, secretBox: null });
+  const app = createApp({ userService, aiService, sessionStore: new session.MemoryStore(), config });
   return { app, userService };
 }
 

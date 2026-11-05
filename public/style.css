@@ -134,7 +134,8 @@ table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: .6rem .5rem; border-bottom: 1px solid var(--border); white-space: nowrap; vertical-align: middle; }
 th { color: var(--muted); font-weight: 500; font-size: .8rem; }
 tr.inactive td { color: var(--muted); }
-td.actions { display: flex; gap: .4rem; }
+td.actions form + form { margin-left: .4rem; }
+hr.sep { border: 0; border-top: 1px solid var(--border); margin: 1.25rem 0; }
 code { font: .85em ui-monospace, SFMono-Regular, Consolas, monospace; background: var(--hover); padding: .1rem .35rem; border-radius: 4px; }
 
 .checklist { list-style: none; margin: 0; padding: 0; max-height: 60vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }

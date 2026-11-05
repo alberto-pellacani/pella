@@ -1,0 +1,121 @@
+<%- include('partials/header') %>
+<% const base = '/admin/ai/' + provider.type; const isAzure = provider.needsEndpoint; %>
+<a class="back" href="/admin/ai">← Provider AI</a>
+<div class="page-head">
+  <h1><%= provider.label %></h1>
+  <% if (provider.configured) { %>
+    <span class="badge <%= provider.active ? 'solid' : '' %>"><%= provider.active ? 'attivo' : 'disattivato' %></span>
+  <% } else { %>
+    <span class="badge">non configurato</span>
+  <% } %>
+</div>
+
+<% if (!encryptionReady) { %>
+  <div class="notice"><%- include('partials/icon', { name: 'alert' }) %>
+    <span>Salvataggio delle chiavi disattivato: imposta <code>AI_ENCRYPTION_KEY</code> nelle variabili d'ambiente.</span></div>
+<% } else if (provider.configured && !provider.keyReadable) { %>
+  <div class="notice"><%- include('partials/icon', { name: 'alert' }) %>
+    <span>La chiave salvata non è più leggibile: reinseriscila.</span></div>
+<% } %>
+
+<div class="split">
+  <section class="card">
+    <h2>Credenziali</h2>
+    <form method="post" action="<%= base %>/credentials">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>Chiave API
+        <input type="password" name="apiKey" autocomplete="off" <%= provider.configured ? '' : 'required' %>
+          placeholder="<%= provider.keyHint || 'Incolla la chiave' %>">
+        <% if (provider.configured) { %><small class="hint">Lascia vuoto per mantenere la chiave attuale (<%= provider.keyHint %>).</small><% } %>
+      </label>
+      <% if (isAzure) { %>
+        <label>Endpoint
+          <input type="url" name="endpoint" required placeholder="https://nome-risorsa.openai.azure.com" value="<%= provider.endpoint || '' %>"></label>
+        <label>Versione API
+          <input type="text" name="apiVersion" placeholder="2024-10-21" value="<%= provider.apiVersion || '' %>"></label>
+      <% } %>
+      <button type="submit" class="button" <%= encryptionReady ? '' : 'disabled' %>>Salva</button>
+    </form>
+
+    <% if (provider.configured) { %>
+      <hr class="sep">
+      <div class="actions-row">
+        <form method="post" action="<%= base %>/test" class="inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button type="submit" class="button secondary small"><%- include('partials/icon', { name: 'plug' }) %>Prova connessione</button>
+        </form>
+        <form method="post" action="<%= base %>/active" class="inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="active" value="<%= provider.active ? 'false' : 'true' %>">
+          <button type="submit" class="button secondary small"><%= provider.active ? 'Disattiva' : 'Attiva' %></button>
+        </form>
+        <form method="post" action="<%= base %>/delete" class="inline" data-confirm="Eliminare la chiave e tutti i modelli di <%= provider.label %>?">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button type="submit" class="button danger small"><%- include('partials/icon', { name: 'trash' }) %>Elimina configurazione</button>
+        </form>
+      </div>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <div class="page-head">
+      <h2 style="margin:0">Modelli</h2>
+      <% if (provider.configured && provider.canListModels) { %>
+        <a class="button secondary small" href="<%= base %>/available"><%- include('partials/icon', { name: 'refresh' }) %>Recupera lista dal provider</a>
+      <% } %>
+    </div>
+
+    <% if (!provider.configured) { %>
+      <p class="muted">Salva prima la chiave API per aggiungere modelli.</p>
+    <% } else { %>
+      <% if (provider.models.length === 0) { %>
+        <p class="muted">Nessun modello aggiunto.</p>
+      <% } else { %>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nome visualizzato</th><th><%= isAzure ? 'Deployment' : 'ID modello' %></th><th>Stato</th><th></th></tr></thead>
+            <tbody>
+              <% provider.models.forEach((m) => { %>
+                <tr class="<%= m.active ? '' : 'inactive' %>">
+                  <td>
+                    <form method="post" action="<%= base %>/models/<%= m.id %>/name" class="inline-edit">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <input type="text" name="displayName" value="<%= m.displayName %>" required maxlength="200" aria-label="Nome visualizzato">
+                      <button type="submit" class="button secondary small">Salva</button>
+                    </form>
+                  </td>
+                  <td><code><%= m.modelId %></code></td>
+                  <td><span class="badge <%= m.active ? 'on' : '' %>"><%= m.active ? 'attivo' : 'disattivo' %></span></td>
+                  <td class="actions">
+                    <form method="post" action="<%= base %>/models/<%= m.id %>/active" class="inline">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <input type="hidden" name="active" value="<%= m.active ? 'false' : 'true' %>">
+                      <button type="submit" class="button secondary small"><%= m.active ? 'Disattiva' : 'Attiva' %></button>
+                    </form>
+                    <form method="post" action="<%= base %>/models/<%= m.id %>/delete" class="inline" data-confirm="Eliminare il modello <%= m.displayName %>?">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button type="submit" class="button danger small" aria-label="Elimina"><%- include('partials/icon', { name: 'trash' }) %></button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+
+      <div class="divider"><span>aggiungi a mano</span></div>
+      <form method="post" action="<%= base %>/models/manual">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label><%= isAzure ? 'Nome del deployment' : 'ID modello' %>
+          <input type="text" name="modelId" required maxlength="200" placeholder="<%= isAzure ? 'es. gpt-4o-produzione' : 'es. ' + ({ anthropic: 'claude-sonnet-…', openai: 'gpt-…', google: 'gemini-…', openrouter: 'vendor/modello' }[provider.type] || '') %>">
+          <% if (isAzure) { %><small class="hint">Il nome che hai dato al deployment nel portale Azure.</small><% } %>
+        </label>
+        <label>Nome visualizzato
+          <input type="text" name="displayName" required maxlength="200"></label>
+        <button type="submit" class="button secondary"><%- include('partials/icon', { name: 'plus' }) %>Aggiungi</button>
+      </form>
+    <% } %>
+  </section>
+</div>
+<%- include('partials/footer') %>

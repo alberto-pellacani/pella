@@ -7,8 +7,9 @@ const { createPassport } = require('./auth/passport');
 const { authRoutes } = require('./routes/auth');
 const { profileRoutes } = require('./routes/profile');
 const { adminRoutes } = require('./routes/admin');
+const { aiAdminRoutes } = require('./routes/aiAdmin');
 
-function createApp({ userService, sessionStore, config }) {
+function createApp({ userService, aiService, sessionStore, config }) {
   const app = express();
   const passport = createPassport(userService, config);
   const { csrfSynchronisedProtection, generateToken } = csrfSync({
@@ -48,6 +49,7 @@ function createApp({ userService, sessionStore, config }) {
   app.use(authRoutes({ passport, userService, config }));
   app.use(profileRoutes({ userService }));
   app.use(adminRoutes({ userService }));
+  app.use(aiAdminRoutes({ aiService }));
 
   app.use((req, res) => res.status(404).render('error', { title: 'Pagina non trovata', message: 'La pagina richiesta non esiste.' }));
 
