@@ -8,6 +8,12 @@ const MESSAGES = {
   GOOGLE_EMAIL_UNVERIFIED: "L'email del tuo account Google non risulta verificata.",
   LAST_ADMIN: 'Operazione non consentita: deve restare almeno un amministratore attivo.',
   NOT_FOUND: 'Utente non trovato.',
+  AI_KEY_MISSING: "Configurazione mancante: imposta AI_ENCRYPTION_KEY nelle variabili d'ambiente.",
+  PROVIDER_NOT_FOUND: 'Provider non trovato.',
+  PROVIDER_NOT_CONFIGURED: 'Configura prima la chiave API.',
+  KEY_UNREADABLE: 'La chiave salvata non è più leggibile: reinseriscila.',
+  MODEL_NOT_FOUND: 'Modello non trovato.',
+  PROVIDER_ERROR: 'Errore dal provider.',
 };
 
 class UserError extends Error {

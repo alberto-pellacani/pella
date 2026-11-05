@@ -32,3 +32,38 @@ model Session {
   @@index([expire])
   @@map("session")
 }
+
+// Provider AI configurati dall'admin (uno per tipo). La chiave API è cifrata (AES-256-GCM).
+enum AiProviderType {
+  anthropic
+  google
+  azure
+  openai
+  openrouter
+}
+
+model AiProvider {
+  id         Int            @id @default(autoincrement())
+  type       AiProviderType @unique
+  apiKeyEnc  String
+  apiKeyHint String
+  endpoint   String?
+  apiVersion String?
+  active     Boolean        @default(true)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  models     AiModel[]
+}
+
+// Modelli abilitati per un provider (modelId = nome usato nelle API; per Azure il deployment)
+model AiModel {
+  id          Int        @id @default(autoincrement())
+  providerId  Int
+  provider    AiProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  modelId     String
+  displayName String
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+
+  @@unique([providerId, modelId])
+}
