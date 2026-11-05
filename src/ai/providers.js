@@ -74,7 +74,9 @@ function createAiClient({ fetch = globalThis.fetch, timeoutMs = 10000 } = {}) {
       const detail = errorDetail(body);
       throw new AiProviderError(`Errore dal provider (HTTP ${res.status})${detail ? `: ${detail}` : '.'}`);
     }
-    return body || {};
+    // Una risposta "ok" ma non JSON (es. pagina HTML di un endpoint sbagliato) non è un successo
+    if (!body || typeof body !== 'object') throw new AiProviderError('Risposta del provider non valida: controlla endpoint e chiave.');
+    return body;
   }
 
   const specFor = (type) => {
@@ -86,8 +88,14 @@ function createAiClient({ fetch = globalThis.fetch, timeoutMs = 10000 } = {}) {
   async function listModels(type, creds) {
     const spec = specFor(type);
     if (!spec.list) throw new AiProviderError('Per Azure i modelli si inseriscono a mano (nome del deployment).');
-    const models = spec.parse(await call(spec.list(creds)));
-    return models.sort((a, b) => a.id.localeCompare(b.id));
+    const body = await call(spec.list(creds));
+    try {
+      const models = spec.parse(body).map((m) => ({ id: String(m.id), name: String(m.name) }));
+      if (models.some((m) => !m.id || m.id === 'undefined')) throw new Error('modello senza id');
+      return models.sort((a, b) => a.id.localeCompare(b.id));
+    } catch {
+      throw new AiProviderError('Formato della risposta del provider non riconosciuto.');
+    }
   }
 
   async function testConnection(type, creds) {

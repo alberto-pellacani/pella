@@ -61,7 +61,7 @@ test('provider AI: salvataggio chiave → mostrata solo mascherata', async () =>
   const r = await post(admin, '/admin/ai/openai/credentials', { apiKey: KEY });
   assert.equal(r.headers.location, '/admin/ai/openai');
   const page = await admin.get('/admin/ai/openai').expect(200);
-  assert.match(page.text, /sk-pro••••1234/);
+  assert.match(page.text, /sk-proj-••••1234/);
   assert.doesNotMatch(page.text, /abcdefghijklmnop/);
 });
 
@@ -100,4 +100,11 @@ test('provider AI: senza AI_ENCRYPTION_KEY la pagina lo segnala', async () => {
   const app = setup({ secretBox: null });
   const admin = await registered(app, 'admin@x.it');
   assert.match((await admin.get('/admin/ai').expect(200)).text, /AI_ENCRYPTION_KEY/);
+});
+
+test('provider AI: POST modelli senza selezione su tipo sconosciuto → 404', async () => {
+  const app = setup();
+  const admin = await registered(app, 'admin@x.it');
+  const r = await post(admin, '/admin/ai/pippo/models');
+  assert.equal(r.status, 404);
 });

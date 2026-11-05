@@ -26,7 +26,7 @@ function setup(opts = {}) {
 const code = (c) => (err) => { assert.equal(err.code, c); return true; };
 
 test('maskKey: prefisso + ultime 4 per chiavi lunghe, solo ultime 4 per chiavi corte', () => {
-  assert.equal(maskKey(KEY), 'sk-pro••••1234');
+  assert.equal(maskKey(KEY), 'sk-proj-••••1234');
   assert.equal(maskKey('short5678'), '••••5678');
 });
 
@@ -36,7 +36,7 @@ test('saveCredentials: la chiave è cifrata e mascherata; vuota al secondo salva
   const stored = await repo.findProvider('openai');
   assert.ok(!stored.apiKeyEnc.includes(KEY));
   assert.ok(!stored.apiKeyEnc.includes('abcdefghijklmnop'));
-  assert.equal(stored.apiKeyHint, 'sk-pro••••1234');
+  assert.equal(stored.apiKeyHint, 'sk-proj-••••1234');
 
   await service.saveCredentials('openai', { apiKey: '   ' });
   await service.addModelManually('openai', { modelId: 'gpt-a', displayName: 'GPT A' });
@@ -148,4 +148,10 @@ test('renameModel e deleteProvider', async () => {
   const p = await service.getProvider('openai');
   assert.equal(p.configured, false);
   assert.deepEqual(p.models, []);
+});
+
+test('maskKey: chiavi senza prefisso pubblico noto (es. Azure) mostrano solo le ultime 4', () => {
+  assert.equal(maskKey('0123456789abcdef0123456789abcdef'), '••••cdef');
+  assert.equal(maskKey('sk-ant-api03-abcdefghijklmnopqrstuv9999'), 'sk-ant-••••9999');
+  assert.equal(maskKey('AIzaSyabcdefghijklmnopqrstuv0000'), 'AIza••••0000');
 });

@@ -2,6 +2,7 @@
 const express = require('express');
 const { UserError } = require('../services/errors');
 const { requireLogin, requireAdmin, flash } = require('../middleware/auth');
+const { findProvider } = require('../ai/providers');
 
 const notFound = (res) => res.status(404).render('error', { title: 'Pagina non trovata', message: 'Provider non trovato.' });
 
@@ -75,6 +76,7 @@ function aiAdminRoutes({ aiService }) {
   ));
 
   router.post('/admin/ai/:type/models', async (req, res, next) => {
+    if (!findProvider(req.params.type)) return notFound(res);
     const ids = asArray(req.body.models);
     if (ids.length === 0) {
       flash(req, 'error', 'Nessun modello selezionato.');

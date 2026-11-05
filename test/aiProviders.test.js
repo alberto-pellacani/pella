@@ -92,3 +92,15 @@ test('errore di rete e timeout diventano AiProviderError', async () => {
   const timeout = async () => { const e = new Error('timeout'); e.name = 'TimeoutError'; throw e; };
   await assert.rejects(createAiClient({ fetch: timeout }).listModels('openai', creds), (err) => err instanceof AiProviderError && /Timeout/.test(err.message));
 });
+
+test('risposta 200 non JSON (es. pagina HTML) → AiProviderError, non successo', async () => {
+  const fetch = fakeFetch(() => ({ ok: true, status: 200, json: async () => { throw new SyntaxError('Unexpected token <'); } }));
+  await assert.rejects(createAiClient({ fetch }).testConnection('azure', { apiKey: 'K', endpoint: 'https://x', apiVersion: 'v' }), AiProviderError);
+});
+
+test('risposta con formato inatteso → AiProviderError', async () => {
+  const fetch = fakeFetch({ data: [{ name: 'senza id' }] });
+  await assert.rejects(createAiClient({ fetch }).listModels('openai', creds), AiProviderError);
+  const fetch2 = fakeFetch({ data: 'non un array' });
+  await assert.rejects(createAiClient({ fetch: fetch2 }).listModels('openai', creds), AiProviderError);
+});

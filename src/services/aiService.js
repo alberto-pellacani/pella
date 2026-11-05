@@ -6,10 +6,14 @@ const { UserError } = require('./errors');
 const DEFAULT_AZURE_API_VERSION = '2024-10-21';
 const MAX_LEN = 200;
 
-// Mostra solo l'inizio (non segreto) e le ultime 4 cifre della chiave
+// Prefissi pubblici delle chiavi (non segreti): l'unica parte iniziale che si può mostrare
+const PUBLIC_PREFIX = /^(sk-ant-|sk-or-v1-|sk-or-|sk-proj-|sk-svcacct-|sk-|AIza)/;
+
+// Mostra solo il prefisso pubblico (se c'è) e le ultime 4 cifre della chiave
 function maskKey(apiKey) {
   const key = String(apiKey);
-  return `${key.length >= 20 ? key.slice(0, 6) : ''}••••${key.slice(-4)}`;
+  const prefix = key.length >= 20 ? (key.match(PUBLIC_PREFIX) || [''])[0] : '';
+  return `${prefix}••••${key.slice(-4)}`;
 }
 
 const clean = (v) => String(v ?? '').trim();
